@@ -87,7 +87,10 @@ def make_handler(asset_root=DEFAULT_ASSETS):
             if path in ('/','/engine','/engine/','/our-port','/our-port/'):
                 self.send_response(302);self.send_header('Location','/our-port/index.html' if path.startswith('/our-port') else '/engine/index.html');self.send_header('Content-Length','0');self.end_headers();return
             try:
-                if path.startswith('/assets/'):
+                if path=='/game-files-sw.js':
+                    file=public/'game-files-sw.js'
+                    content_type='text/javascript'
+                elif path.startswith('/assets/'):
                     file=resolve_asset(str(asset_root),path[len('/assets/'):])
                     content_type='application/octet-stream'
                 elif path.startswith('/our-port/'):
@@ -99,7 +102,7 @@ def make_handler(asset_root=DEFAULT_ASSETS):
 
                     # Explicit files only; no file browsing or source exposure.
                     name=path[len('/engine/'):]
-                    if name not in {'index.html','bootstrap.mjs','graphics.mjs','integrity.mjs','SRR2.js','SRR2.wasm','logo.png'}:raise FileNotFoundError(path)
+                    if name not in {'index.html','bootstrap.mjs','graphics.mjs','zip.mjs','local-files.mjs','asset-response.mjs','integrity.mjs','SRR2.js','SRR2.wasm','logo.png'}:raise FileNotFoundError(path)
                     file=public/'engine'/name
                     content_type={'.wasm':'application/wasm','.mjs':'text/javascript','.js':'text/javascript','.html':'text/html; charset=utf-8','.png':'image/png'}.get(file.suffix,'application/octet-stream')
                 else:raise FileNotFoundError(path)

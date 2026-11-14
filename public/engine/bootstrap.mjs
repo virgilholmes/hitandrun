@@ -1,3 +1,4 @@
+import { importedGame, importGameZip, activateLocalFiles, checkLocalFiles } from './local-files.mjs';
 import { normalizeGraphics, installGraphics } from './graphics.mjs';
 import { verifyEngineBytes } from './integrity.mjs';
 const canvas=document.getElementById('canvas'),overlay=document.getElementById('overlay');
@@ -21,6 +22,8 @@ const COMMIT='7712a23723a60c752682debf727be10488866d87';
 const WASM_URL=`https://raw.githubusercontent.com/iscle/the-simpsons-hit-and-run-wasm/${COMMIT}/SRR2.wasm`;
 const DB='hit-and-run-local-saves',STORE='files';
 let started=false,gameplay=false,lastSave=0,failed=false;
+let assetBaseUrl='/assets/';
+const zipInput=document.getElementById('game-zip'),uploadButton=document.getElementById('upload-zip'),importStatus=document.getElementById('import-status');
 function log(...args){logs.textContent=(logs.textContent+'\n'+args.map(String).join(' ')).slice(-16000);}
 function fail(error){overlay.classList.add('has-error');failed=true;startButton.disabled=false;startButton.textContent='Reload and retry';errorBox.textContent=error?.message||String(error);status.textContent='The game could not start.';overlay.classList.remove('hidden');log(error?.stack||error);}
 window.addEventListener('error',e=>fail(e.error||e.message));
@@ -62,16 +65,49 @@ try{
   if(!crossOriginIsolated||typeof SharedArrayBuffer==='undefined')throw new Error('This game requires cross-origin isolation. Start it with scripts/play.py or npm run dev; opening the HTML directly will not work.');
   const probe=document.createElement('canvas');
   if(!probe.getContext('webgl2')&&!probe.getContext('webgl'))throw new Error('WebGL is unavailable. Enable browser graphics acceleration.');
-  const response=await fetch('/api/game-status',{cache:'no-store'});
-  if(!response.ok)throw new Error('The local game-file server is unavailable. Start scripts/play.py.');
-  const files=await response.json();
-  if(!files.ready)throw new Error('Required PC game files are missing: '+files.missing.join(', ')+'. Set SHR_ASSET_DIR to your retail PC installation.');
-  status.textContent='Local PC game files found. Ready to load the original engine.';
-  startButton.disabled=false;
+  const imported=await importedGame();
+  if(imported){
+    try{assetBaseUrl=await activateLocalFiles();await checkLocalFiles();startButton.disabled=false;importStatus.textContent='Your imported game is stored in this browser.';status.textContent='Ready to play.';}
+    catch(e){log('Stored game unavailable:',e.message);}
+  }
+  if(startButton.disabled){
+    try{
+      const response=await fetch('/api/game-status',{cache:'no-store'});
+      if(response.ok&&(await response.json()).ready){startButton.disabled=false;status.textContent='Local PC game files found. Ready to play.';}
+    }catch(e){log('Local asset server:',e.message);}
+    if(startButton.disabled){status.textContent='Choose your PC game ZIP to get started.';importStatus.textContent='Select a ZIP of the installed PC game folder.';}
+  }
+  uploadButton.disabled=false;
 }catch(e){fail(e);}
+uploadButton.onclick=()=>zipInput.click();
+zipInput.onchange=async()=>{
+  const file=zipInput.files[0];if(!file||started)return;
+  const wasReady=!startButton.disabled,previousBase=assetBaseUrl;
+  let published=false;
+  uploadButton.disabled=true;startButton.disabled=true;errorBox.textContent='';overlay.classList.add('loading');progress.hidden=false;
+  try{
+    // Activate before extracting so unsupported browser storage/worker setups
+    // fail without writing a multi-GB import.
+    const localBase=await activateLocalFiles();
+    status.textContent='Checking game ZIP…';
+    const manifest=await importGameZip(file,p=>{
+      progress.value=p.total?p.completed/p.total:0;
+      status.textContent='Importing game — '+Math.round(progress.value*100)+'%';
+      importStatus.textContent=p.file;
+    });
+    published=true;assetBaseUrl=localBase;await activateLocalFiles();await checkLocalFiles();
+    importStatus.textContent=manifest.count+' game files ready. Stored only in this browser.';
+    status.textContent='Ready to play.';startButton.disabled=false;
+  }catch(e){
+    assetBaseUrl=previousBase;startButton.disabled=!wasReady||(published&&previousBase!=='/assets/');
+    errorBox.textContent=e.message||String(e);status.textContent=published?'Game files saved. Refresh to finish setting up the file loader.':wasReady?'Previous game files are still available.':'Choose a ZIP of the installed PC game files.';
+    importStatus.textContent='Nothing was uploaded to a server.';
+    log('Game import:',e.stack||e);
+  }finally{uploadButton.disabled=false;zipInput.value='';overlay.classList.remove('loading');progress.hidden=true;}
+};
 startButton.onclick=async()=>{
   if(failed){location.reload();return;}
-  overlay.classList.add('loading');startButton.disabled=true;startButton.textContent='Loading…';progress.hidden=false;
+  uploadButton.disabled=true;overlay.classList.add('loading');startButton.disabled=true;startButton.textContent='Loading…';progress.hidden=false;
   try{
     const bytes=await getWasm();status.textContent='Compiling the original engine…';
     const compiled=await WebAssembly.compile(bytes);
@@ -81,7 +117,7 @@ startButton.onclick=async()=>{
     });
     for(const input of [aspectSelect,qualitySelect,antialiasInput])input.disabled=true;
     const M=window.Module={
-      canvas,assetBaseUrl:'/assets/',
+      canvas,assetBaseUrl,
       instantiateWasm(imports,receive){const instance=new WebAssembly.Instance(compiled,imports);receive(instance,compiled);return instance.exports;},
       preRun:[()=>{M.addRunDependency('restore-saves');loadSaves().then(saves=>{M.pendingSaves=saves;}).catch(e=>{M.pendingSaves=[];log('Saves could not be loaded:',e.message);}).finally(()=>M.removeRunDependency('restore-saves'));}],
       flushPendingSaves(){for(const save of M.pendingSaves||[]){try{M.FS.writeFile(save.path,save.data);}catch(e){log('Save restore:',e.message);}}M.pendingSaves=[];},

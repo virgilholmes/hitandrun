@@ -15,7 +15,8 @@
     "test:own-port": "node tests/own-port.test.mjs",
     "test:springfield": "node tests/springfield.test.mjs",
     "build:game": "python scripts/build-game.py",
-    "test:graphics": "node tests/graphics.test.mjs"
+    "test:graphics": "node tests/graphics.test.mjs",
+    "test:local-files": "node tests/local-files.test.mjs"
   },
   "dependencies": {
     "next": "^16.0.0",

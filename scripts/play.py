@@ -22,7 +22,7 @@ def main():
     if not 1<=args.port<=65535:cli.error('Port must be between 1 and 65535')
     if args.next and args.port==3000:cli.error('The asset server port must differ from Next.js port 3000')
     status=status_for(args.assets)
-    if not status['ready']:cli.error('Missing PC game files: '+', '.join(status['missing'])+'. Choose the retail installation with --assets.')
+    if not status['ready']:print('No local PC installation found. Choose your installed game ZIP in the browser.',flush=True)
     node=shutil.which('node')
     next_cli=PROJECT/'node_modules/next/dist/bin/next'
     if args.next and (not node or not next_cli.exists()):cli.error('Next.js requires Node.js and npm install. To try the game without Node, run this command without --next.')
@@ -37,7 +37,7 @@ def main():
             url='http://127.0.0.1:3000'+('/our-port/preview.html' if args.own_port else '')
         else:url=f'http://127.0.0.1:{args.port}/'+('our-port/preview.html' if args.own_port else 'engine/index.html')
         print(f'Open {url}',flush=True)
-        print('Using your local retail PC files. Game data stays on this machine.',flush=True)
+        print('Use the local PC installation or choose a game ZIP in the browser. Game data stays on this machine.',flush=True)
         if args.own_port:print('Our source-port milestone: asset reading and rendering only; gameplay is pending.',flush=True)
         if not args.own_port and not status['engineInstalled']:print('The browser will fetch and verify the engine binary on first launch. Internet access is needed once.',flush=True)
         print('Press Ctrl+C to stop.',flush=True)

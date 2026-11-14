@@ -273,3 +273,20 @@ Five automated graphics tests cover projection/FOV, UI proportions, logical
 input dimensions, viewport/scissor scaling, framebuffer isolation, texture
 filtering and fallback. Eight server tests also pass. Live browser gameplay
 with these options is not verified in this sandbox.
+
+
+Choose game ZIP in the browser
+-----------------------------
+The title screen now accepts a ZIP of the installed retail PC game folder.
+Choose game ZIP -> select the archive -> wait for import -> Play. Include
+scripts.rcf, dialog.rcf, art/ and sound/. A C++ source ZIP is not playable data.
+No game data is uploaded to a server: files are streamed into local browser
+storage and served through a local service worker with byte-range support.
+The launch script now works without a preconfigured retail installation.
+
+Restart PLAY.sh after updating so it serves the new modules/service worker.
+Standard Store/Deflate ZIPs are supported, not encrypted/split/ZIP64 archives.
+Use localhost or HTTPS with the existing isolation headers. Imports are scoped
+to this browser and origin; changing hostname or port uses separate storage.
+Six import/range/worker tests, five graphics tests and nine server tests pass.
+Full game playback from browser-imported assets remains unverified here.

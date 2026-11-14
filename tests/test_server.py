@@ -61,6 +61,13 @@ class ServerChecks(unittest.TestCase):
         self.assertEqual(request(self.handler,'/')[0],302)
         self.assertEqual(request(self.handler,'/engine/index.html')[0],200)
         self.assertEqual(request(self.handler,'/engine/SRR2.js')[1]['Content-Type'],'text/javascript')
+    def test_browser_import_scripts_are_served(self):
+        for path in ['/game-files-sw.js','/engine/zip.mjs','/engine/local-files.mjs','/engine/asset-response.mjs']:
+            code,headers,body=request(self.handler,path)
+            self.assertEqual(code,200,path)
+            self.assertEqual(headers['Content-Type'],'text/javascript')
+            self.assertTrue(body)
+        self.assertEqual(request(self.handler,'/game-files-sw.js/../package.json')[0],404)
     def test_empty_file(self):
         (self.root/'Art/empty.p3d').touch()
         self.assertEqual(request(self.handler,'/assets/Art/empty.p3d')[2],b'')
