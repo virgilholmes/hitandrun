@@ -1,0 +1,25 @@
+The Simpsons: Hit & Run browser engine
+
+Engine build: iscle/the-simpsons-hit-and-run-wasm
+Repository: https://github.com/iscle/the-simpsons-hit-and-run-wasm
+Pinned commit: 7712a23723a60c752682debf727be10488866d87
+Source: https://github.com/iscle/The-Simpsons-Hit-and-Run/tree/wasm-port
+Based on ZenoArrows' source port and the original Radical Entertainment game.
+
+Unmodified vendored file:
+SRR2.js
+Git blob SHA-1: 1dcc07030585d6e4816fcda7abcbdd93b3c5fa1b
+Bytes: 263098
+
+Downloaded separately (not included in this workspace at setup):
+SRR2.wasm
+Git blob SHA-1: 4a92e45140f42fd224d0804fe236c4052240f9ac
+Bytes: 4655088
+
+The local launcher, bootstrap, integrity checker, asset server and Next.js
+integration were added in this workspace. They do not rewrite the engine's
+gameplay. Browser runtime validation remains necessary.
+
+No game assets are included. No license or rights to the original game are
+conferred by this integration. Preserve the upstream attribution and consult
+the upstream source before redistributing engine artifacts.

@@ -1,0 +1,115 @@
+Full original-game source port: INCOMPLETE
+
+This target compiles real original gameplay; it does not reuse the downloaded
+SRR2 engine and does not replace gameplay with the JavaScript asset viewer.
+
+Build command from the project root:
+  python scripts/build-game.py --clean
+
+Latest incremental build:
+  494 of 510 selected original gameplay translation units have Wasm
+  object files. The build exited nonzero. No playable game executable exists.
+  Browser clock/date and debug output implementations passed a real Wasm
+  runtime smoke test in Node.js.
+  Original physics matrix multiplication, inversion, solve and clamping also
+  passed a linked Wasm runtime test with independently expected results.
+
+  Original source archives built: Pure3D (99 units), sim (42), choreo (31),
+  poser (5), radcontent (7), radmusic (20), Scrooby (33), libpng (15),
+  zlib (14), plus original radmath (10). Archives alone are not a game.
+
+Do not interpret the compile count as a percentage of port completion. It
+covers the selected gameplay project, not the foundation/renderer/audio
+libraries or a successful full-program link.
+
+Work implemented here:
+- Stage original source into build/full-game/source without editing originals.
+- Preserve source provenance and portability edits in port-edits.json.
+- Normalize source include paths/case to work on a case-sensitive host.
+- Add an explicit RAD_WEB platform, correct 64-bit types and 16-bit retail PC
+  Unicode, and conforming C++ template lookup/declarations.
+- Preserve original gameplay update code, adapting Game::Run to Emscripten
+  frame callbacks. TickBrowser contains the original per-frame services.
+- Implement original clock and debug APIs for the browser, including custom
+  debug output callbacks. Assertions remain active.
+- Generate engine library sources/includes from the original Windows projects.
+  Keep Windows-specific Pure3D files listed as pending browser replacements.
+- Port original animation, template lookup, PNG allocator configuration and
+  physics debug output without editing the supplied source tree.
+- Generate the gameplay source list from the original Windows project and
+  explicitly list seven platform files requiring browser replacements.
+
+Not implemented/linked:
+- Foundation memory allocators, file system/save backends, controllers and
+  scheduling implementations required by the full game.
+- Original Pure3D/PDDI renderer connected to WebGL. The existing JS preview
+  renderer is not the original rendering engine.
+- Browser audio/movie backends and the Windows-specific input/camera code.
+- Complete radcore, radsound and radmovie source ports.
+- Integration testing of original script loading/type metadata during boot.
+- Browser startup and full-engine linking.
+- Full game boot, menus, original player/vehicle simulation and missions.
+
+Diagnostics:
+  build/full-game/build-report.json
+  build/full-game/engine-build.log
+  build/full-game/game_sources.json
+  build/full-game/foundation-build.log
+  build/full-game/physics-build.log
+  build/full-game/library_sources.json
+
+A nonzero build result is deliberate and must stay visible while required
+code is unported. Do not silence unresolved functions or insert empty game
+system implementations to label this a successful game build.
+
+The existing independent asset preview remains available with:
+  python scripts/play.py --own-port
+It is a separate milestone and is not changed into a game by this target.
+
+Script ABI/browser renderer update
+----------------------------------
+The original radscript library now builds with our browser virtual-call
+adapter replacing the x86 assembly source (still inventoried as a platform
+replacement). Runtime vcall_smoke.mjs verifies mixed integer/float/string
+arguments and void/integer/float results against actual virtual C++ methods.
+It also verifies the inherited AddRef/Release slots and object state.
+There is no arbitrary +1 vtable offset: Wasm uses the interface's actual
+method slots. Script double arguments/results fail explicitly; the supplied
+retail srrtypes.typ contains no double declarations. Full script loading is
+not yet runtime-tested in a game boot.
+
+The supplied PDDI OpenGL source and browser display now compile AND LINK in
+renderer_smoke.html. prepare_gl.py adapts a generated copy of the installed
+Emscripten MIT-licensed GL layer, retaining its notice and recording source
+hashes. No compiler installation files are changed. Exact source anchors fail
+configuration on incompatible compiler versions.
+
+Implemented graphics compatibility:
+- Directional and point light shader vectors with per-light distance attenuation.
+- Emissive material color and scalar-to-vector GL light/material APIs.
+- WebGL-compatible RGBA texture uploads and clamp-to-edge sampler modes.
+- Browser-managed texture residency (desktop hint omitted, engine priority kept).
+- One-time context reset consumption, preventing per-frame texture invalidation.
+- Optional desktop separate-specular extension kept outside the browser path.
+
+The linked Node/Wasm gl_state_smoke verifies attenuation for all eight lights,
+material emission and shininess in the compiled JS/Wasm layer. This does NOT
+verify GPU rendering. renderer_smoke.html has real pixel checks for an original
+PDDI clear and triangle. Browser execution was attempted through the existing
+QtWebEngine QA runner, but the browser process failed under the sandbox with
+Operation not permitted. Do not report rendererRuntimePassed=true until those
+checks actually run successfully. The HTML is self-contained and needs no
+network fetch to load its Wasm.
+
+Foundation browser_fibers.cpp implements the original fiber API with real
+Emscripten stack switching. fibers_smoke verifies nested switching, user data,
+stack locals and resumption in Wasm. Its memory allocator is explicitly a
+TEST HARNESS allocator; production fibers call original radMemory APIs.
+This is not a complete thread backend and is not integrated into the original
+radcore archive yet. Inspection found no gameplay/Pure3D callers of these fiber
+APIs; game file loading instead uses semaphores and worker threads, which
+remain unported. Fiber tests do not establish working game loading.
+
+build-game.py reports script, fiber and GL-state runtime results independently
+of renderer linking and browser drawing. Latest full build remains incomplete
+with readyToPlay=false. The game does not yet boot.

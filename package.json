@@ -1,0 +1,25 @@
+{
+  "name": "hit-and-run-web",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "dev": "python scripts/play.py --next",
+    "build": "next build",
+    "start": "python scripts/play.py --next --production",
+    "test": "node --test tests/*.test.mjs",
+    "play": "python scripts/play.py",
+    "test:server": "python -m unittest discover -s tests -p \"test_server.py\"",
+    "test:own-port": "node tests/own-port.test.mjs",
+    "test:springfield": "node tests/springfield.test.mjs",
+    "build:game": "python scripts/build-game.py",
+    "test:graphics": "node tests/graphics.test.mjs"
+  },
+  "dependencies": {
+    "next": "^16.0.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  }
+}
